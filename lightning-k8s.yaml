@@ -1,0 +1,84 @@
+# Source: enbuild/templates/enbuild-bolt.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: enbuild-enbuild-bolt
+  labels:
+    app: bolt
+    app.kubernetes.io/component: bolt
+    helm.sh/chart: enbuild-0.0.25
+    app.kubernetes.io/name: enbuild
+    app.kubernetes.io/instance: enbuild
+    app.kubernetes.io/version: "1.0.20"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  selector:
+    app: bolt
+    app.kubernetes.io/component: bolt
+    app.kubernetes.io/name: enbuild
+    app.kubernetes.io/instance: enbuild
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 5173
+---
+
+# Source: enbuild/templates/enbuild-bolt.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: enbuild-enbuild-bolt
+  labels:
+    app: bolt
+    app.kubernetes.io/component: bolt
+    helm.sh/chart: enbuild-0.0.25
+    app.kubernetes.io/name: enbuild
+    app.kubernetes.io/instance: enbuild
+    app.kubernetes.io/version: "1.0.20"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bolt
+      app.kubernetes.io/component: bolt
+      app.kubernetes.io/name: enbuild
+      app.kubernetes.io/instance: enbuild
+  template:
+    metadata:
+      labels:
+        app: bolt
+        app.kubernetes.io/component: bolt
+        app.kubernetes.io/name: enbuild
+        app.kubernetes.io/instance: enbuild
+    spec:
+      contboltners:
+      - env:
+        - name: MAX_CONTEXT_LENGTH
+          value: "1000"
+        - name: AUTH_API_URL
+          value: "http://enbuild-enbuild-user/api/v1/roles/auth"
+        - name: OLLAMA_API_BASE_URL
+          value: "http://open-webui-ollama.dev-enbuild.svc.cluster.local:11434"
+        envFrom:
+        - secretRef:
+            name: enbuild-mongo-secrets
+        - secretRef:
+            name: enbuild-backend-secret
+        imagePullPolicy: Always
+        image: ghcr.io/junaid18183/lightning:latest
+        name: enbuild-bolt
+        ports:
+        - contboltnerPort: 8000
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          runAsGroup: 1001
+          runAsNonRoot: true
+          readOnlyRootFilesystem: false
+          runAsUser: 1001
