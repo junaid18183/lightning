@@ -55,6 +55,7 @@ ENV WRANGLER_SEND_METRICS=false \
 RUN mkdir -p /root/.config/.wrangler && \
     echo '{"enabled":false}' > /root/.config/.wrangler/metrics.json
 
+ENV NODE_OPTIONS="--max-old-space-size=2048"
 RUN pnpm run build
 
 CMD [ "pnpm", "run", "dockerstart"]
@@ -89,6 +90,7 @@ ENV GROQ_API_KEY=${GROQ_API_KEY} \
     AWS_BEDROCK_CONFIG=${AWS_BEDROCK_CONFIG} \
     VITE_LOG_LEVEL=${VITE_LOG_LEVEL} \
     DEFAULT_NUM_CTX=${DEFAULT_NUM_CTX}\
+    VITE_SERVER_ALLOWED_HOSTS=lightning.vivplatform.io \
     RUNNING_IN_DOCKER=true
 
 RUN mkdir -p ${WORKDIR}/run

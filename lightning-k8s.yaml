@@ -61,6 +61,8 @@ spec:
           value: "production"
         - name: COMPOSE_PROFILES
           value: "production"
+        - name: VITE_SERVER_ALLOWED_HOSTS
+          value: "lightning.vivplatform.io"
         - name: PORT
           value: "5173"
         - name: DEFAULT_NUM_CTX
@@ -79,11 +81,11 @@ spec:
         - secretRef:
             name: enbuild-backend-secret
         imagePullPolicy: Always
-        image: ghcr.io/junaid18183/lightning:sha-a09cf39
+        image: ghcr.io/junaid18183/lightning:juned
         name: enbuild-bolt
         ports:
         - containerPort: 5173
         resources: {}
         securityContext:
           allowPrivilegeEscalation: false
-
+---
