@@ -6,8 +6,8 @@ import { createAmazonBedrock } from '@ai-sdk/amazon-bedrock';
 
 interface AWSBedRockConfig {
   region: string;
-  accessKeyId: string;
-  secretAccessKey: string;
+  accessKeyId?: string;
+  secretAccessKey?: string;
   sessionToken?: string;
 }
 
@@ -69,7 +69,14 @@ export default class AmazonBedrockProvider extends BaseProvider {
      */
   ];
 
-  private _parseAndValidateConfig(apiKey: string): AWSBedRockConfig {
+  private _parseAndValidateConfig(apiKey?: string): AWSBedRockConfig {
+    // If no apiKey is provided, assume we're using IAM role
+    if (!apiKey) {
+      // Default to us-east-1 if no region is specified
+      const region = process.env.AWS_REGION || 'us-east-1';
+      return { region };
+    }
+
     let parsedConfig: AWSBedRockConfig;
 
     try {
@@ -82,16 +89,19 @@ export default class AmazonBedrockProvider extends BaseProvider {
 
     const { region, accessKeyId, secretAccessKey, sessionToken } = parsedConfig;
 
-    if (!region || !accessKeyId || !secretAccessKey) {
-      throw new Error(
-        'Missing required AWS credentials. Configuration must include region, accessKeyId, and secretAccessKey.',
-      );
+    // When explicit credentials are provided, validate them
+    if (accessKeyId || secretAccessKey) {
+      if (!region || !accessKeyId || !secretAccessKey) {
+        throw new Error(
+          'When providing explicit credentials, configuration must include region, accessKeyId, and secretAccessKey.',
+        );
+      }
     }
 
     return {
-      region,
-      accessKeyId,
-      secretAccessKey,
+      region: region || process.env.AWS_REGION || 'us-east-1',
+      ...(accessKeyId && { accessKeyId }),
+      ...(secretAccessKey && { secretAccessKey }),
       ...(sessionToken && { sessionToken }),
     };
   }
@@ -112,10 +122,7 @@ export default class AmazonBedrockProvider extends BaseProvider {
       defaultApiTokenKey: 'AWS_BEDROCK_CONFIG',
     });
 
-    if (!apiKey) {
-      throw new Error(`Missing API key for ${this.name} provider`);
-    }
-
+    // Parse config - will use IAM role if apiKey is undefined
     const config = this._parseAndValidateConfig(apiKey);
     const bedrock = createAmazonBedrock(config);
 
