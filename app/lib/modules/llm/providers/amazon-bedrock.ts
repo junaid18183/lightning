@@ -6,8 +6,8 @@ import { createAmazonBedrock } from '@ai-sdk/amazon-bedrock';
 
 interface AWSBedRockConfig {
   region: string;
-  accessKeyId?: string;
-  secretAccessKey?: string;
+  accessKeyId: string;
+  secretAccessKey: string;
   sessionToken?: string;
 }
 
@@ -20,63 +20,51 @@ export default class AmazonBedrockProvider extends BaseProvider {
   };
 
   staticModels: ModelInfo[] = [
-    /*
-     * {
-     *   name: 'anthropic.claude-3-5-sonnet-20241022-v2:0',
-     *   label: 'Claude 3.5 Sonnet v2 (Bedrock)',
-     *   provider: 'AmazonBedrock',
-     *   maxTokenAllowed: 200000,
-     * },
-     */
     {
-      name: 'anthropic.claude-3-5-sonnet-20240620-v1:0',
-      label: 'Claude 3.5 Sonnet (Bedrock)',
+      name: 'anthropic.claude-3-5-sonnet-20241022-v2:0',
+      label: 'Claude 3.5 Sonnet v2 (Bedrock)',
       provider: 'AmazonBedrock',
-      maxTokenAllowed: 4096,
-    },
-
-    /*
-     * {
-     *   name: 'anthropic.claude-3-sonnet-20240229-v1:0',
-     *   label: 'Claude 3 Sonnet (Bedrock)',
-     *   provider: 'AmazonBedrock',
-     *   maxTokenAllowed: 4096,
-     * },
-     * {
-     *   name: 'anthropic.claude-3-haiku-20240307-v1:0',
-     *   label: 'Claude 3 Haiku (Bedrock)',
-     *   provider: 'AmazonBedrock',
-     *   maxTokenAllowed: 4096,
-     * },
-     * {
-     *   name: 'amazon.nova-pro-v1:0',
-     *   label: 'Amazon Nova Pro (Bedrock)',
-     *   provider: 'AmazonBedrock',
-     *   maxTokenAllowed: 5120,
-     * },
-     * {
-     *   name: 'amazon.nova-lite-v1:0',
-     *   label: 'Amazon Nova Lite (Bedrock)',
-     *   provider: 'AmazonBedrock',
-     *   maxTokenAllowed: 5120,
-     * },
-     * {
-     *   name: 'mistral.mistral-large-2402-v1:0',
-     *   label: 'Mistral Large 24.02 (Bedrock)',
-     *   provider: 'AmazonBedrock',
-     *   maxTokenAllowed: 8192,
-     * },
-     */
+      maxTokenAllowed: 200000,
+    }
+    // {
+    //   name: 'anthropic.claude-3-5-sonnet-20240620-v1:0',
+    //   label: 'Claude 3.5 Sonnet (Bedrock)',
+    //   provider: 'AmazonBedrock',
+    //   maxTokenAllowed: 4096,
+    // },
+    // {
+    //   name: 'anthropic.claude-3-sonnet-20240229-v1:0',
+    //   label: 'Claude 3 Sonnet (Bedrock)',
+    //   provider: 'AmazonBedrock',
+    //   maxTokenAllowed: 4096,
+    // },
+    // {
+    //   name: 'anthropic.claude-3-haiku-20240307-v1:0',
+    //   label: 'Claude 3 Haiku (Bedrock)',
+    //   provider: 'AmazonBedrock',
+    //   maxTokenAllowed: 4096,
+    // },
+    // {
+    //   name: 'amazon.nova-pro-v1:0',
+    //   label: 'Amazon Nova Pro (Bedrock)',
+    //   provider: 'AmazonBedrock',
+    //   maxTokenAllowed: 5120,
+    // },
+    // {
+    //   name: 'amazon.nova-lite-v1:0',
+    //   label: 'Amazon Nova Lite (Bedrock)',
+    //   provider: 'AmazonBedrock',
+    //   maxTokenAllowed: 5120,
+    // },
+    // {
+    //   name: 'mistral.mistral-large-2402-v1:0',
+    //   label: 'Mistral Large 24.02 (Bedrock)',
+    //   provider: 'AmazonBedrock',
+    //   maxTokenAllowed: 8192,
+    // },
   ];
 
-  private _parseAndValidateConfig(apiKey?: string): AWSBedRockConfig {
-    // If no apiKey is provided, assume we're using IAM role
-    if (!apiKey) {
-      // Default to us-east-1 if no region is specified
-      const region = process.env.AWS_REGION || 'us-east-1';
-      return { region };
-    }
-
+  private _parseAndValidateConfig(apiKey: string): AWSBedRockConfig {
     let parsedConfig: AWSBedRockConfig;
 
     try {
@@ -89,19 +77,16 @@ export default class AmazonBedrockProvider extends BaseProvider {
 
     const { region, accessKeyId, secretAccessKey, sessionToken } = parsedConfig;
 
-    // When explicit credentials are provided, validate them
-    if (accessKeyId || secretAccessKey) {
-      if (!region || !accessKeyId || !secretAccessKey) {
-        throw new Error(
-          'When providing explicit credentials, configuration must include region, accessKeyId, and secretAccessKey.',
-        );
-      }
+    if (!region || !accessKeyId || !secretAccessKey) {
+      throw new Error(
+        'Missing required AWS credentials. Configuration must include region, accessKeyId, and secretAccessKey.',
+      );
     }
 
     return {
-      region: region || process.env.AWS_REGION || 'us-east-1',
-      ...(accessKeyId && { accessKeyId }),
-      ...(secretAccessKey && { secretAccessKey }),
+      region,
+      accessKeyId,
+      secretAccessKey,
       ...(sessionToken && { sessionToken }),
     };
   }
@@ -122,7 +107,10 @@ export default class AmazonBedrockProvider extends BaseProvider {
       defaultApiTokenKey: 'AWS_BEDROCK_CONFIG',
     });
 
-    // Parse config - will use IAM role if apiKey is undefined
+    if (!apiKey) {
+      throw new Error(`Missing API key for ${this.name} provider`);
+    }
+
     const config = this._parseAndValidateConfig(apiKey);
     const bedrock = createAmazonBedrock(config);
 
